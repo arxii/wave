@@ -1,0 +1,29 @@
+// loader
+.-ii-loader {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: auto;
+	width: 10px;
+	height: 10px;
+	background-color: #FFFFFF;
+	animation: _ii_rotate 1s infinite ease-in-out;
+	transition: opacity 0.3s ease;	
+}
+.-ii-loader-stop{
+	animation: _ii_rotate 0.3s ease-in-out;
+	animation-iteration-count: 0;
+	opacity: 0.2;
+	transition: opacity 0.3s ease-in-out,transform 0.1s ease-in-out;
+}
+@keyframes _ii_rotate {
+  0% {
+    transform: perspective(20px) rotateX(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: perspective(20px) rotateX(-180deg) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(20px) rotateX(-180deg) rotateY(-180deg);
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "wave",
+  "version": "1.0.0",
+  "description": "glsl audio visualizer",
+  "main": "app.coffee",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack-dev-server --watch --config ./scripts/dev.config.js --progress --mode development",
+    "prod": "webpack --config ./scripts/dev.config.js --mode production",
+    "deploy": "npm run zip && sudo ./deploy.sh",
+    "dev-server": "nodemon app.coffee --watch server/",
+    "start": "ENV=prod coffee app.coffee",
+    "zip": "git archive --format=zip --output=\"../wave.zip\" master"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "less": "^3.0.1",
+    "preact": "^8.2.7",
+    "preact-slide": "^0.4.4",
+    "random-color": "^1.0.1",
+    "raw-loader": "^0.5.1",
+    "webpack": "^4.5.0",
+    "webpack-cli": "^2.0.14"
+  },
+  "dependencies": {
+    "coffee-loader": "^0.9.0",
+    "coffeescript": "^2.2.4",
+    "css-loader": "^0.28.11",
+    "express": "^4.16.3",
+    "less-loader": "^4.1.0",
+    "style-loader": "^0.20.3",
+    "three": "^0.91.0",
+    "webpack-dev-server": "^3.1.3"
+  }
+}
