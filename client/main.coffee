@@ -22,17 +22,18 @@ Math.clamp  = (v,min,max)->
 		return max
 	else
 		return v 
-default_vs = require './default_vs.glsl'
-t_shader = require './shader.glsl'
+default_vs = require('./default_vs.glsl').default
+t_shader = require('./shader.glsl').default
+# log t_shader
 
 # log randomColor()
 # throw 'stop'
 
 class Wave
 	constructor: (opt)->
-		@length = 400
-		@width = 30
-		@radius = 30
+		@length = 100
+		@width = 10
+		@radius = 20
 		@pitch = 0
 		@angle_offset = 0
 		
@@ -61,7 +62,7 @@ class Wave
 	
 		@size = opt.size || Math.PI
 		@height = 40
-		@wave_count = 1
+		@wave_count = 3
 		@wave_diff  = 0
 
 		@fade_start = 0.2
@@ -69,75 +70,52 @@ class Wave
 
 		@createWedgeGeom()
 
+	# buildPoint: (angle,r,buff)->
+		
 	createWedgeGeom: ->
-		@verts = new Float32Array(@length*3).fill(0)
+		@verts = new Float32Array(@length*12).fill(0)
 		@uvs = new Float32Array(@length*2).fill(0)
 		@norms = new Float32Array(@length*3).fill(0)
 		# indexes = []
 		for i in [0...@length]
-			a = @size/@length*i
-			if i % 2 == 0
-				r = @radius-@width/2
-				@uvs[i*2+1] = 0
-				
-			else 
-				r = @radius+@width/2
-				@uvs[i*2+1] = 1
-
-			@uvs[i*2+0] = 1/@length*i
-			x = Math.cos(a)*r
-			y = Math.sin(a)*r
-
-			@verts[i*3+0] = x
-			@verts[i*3+1] = y
+		
+			start_angle = (Math.PI)/@length*(i-1)
+			end_angle = (Math.PI)/@length*i
+			inner_r = @radius
+			outer_r = @radius+@width
+			# @uvs[i*2+0] = 1/@length*i
+			# x = Math.cos(a)*r
+			# y = Math.sin(a)*r
 			
-			# indexes.push(x,y,0)
+			# if i % 2 == 0
+			@verts[i*12+0] = Math.cos(start_angle)*inner_r
+			@verts[i*12+1] = Math.sin(start_angle)*inner_r
+
+			@verts[i*12+2] = Math.cos(start_angle)*outer_r
+			@verts[i*12+3] = Math.sin(start_angle)*outer_r
 			
+			@verts[i*12+4] = Math.cos(end_angle)*outer_r
+			@verts[i*12+5] = Math.sin(end_angle)*outer_r
+
+
+			@verts[i*12+6] = Math.cos(start_angle)*inner_r
+			@verts[i*12+7] = Math.sin(start_angle)*inner_r
+			
+			@verts[i*12+8] = Math.cos(end_angle)*outer_r
+			@verts[i*12+9] = Math.sin(end_angle)*outer_r
+
+			@verts[i*12+10] = Math.cos(end_angle)*inner_r
+			@verts[i*12+11] = Math.sin(end_angle)*inner_r
+			
+
 
 		@geom = new THREE.BufferGeometry()
-		@geom.addAttribute( 'position', new THREE.BufferAttribute( @verts, 3 ) )
-		@geom.addAttribute( 'uv', new THREE.BufferAttribute( @uvs, 2 ) )
+		@geom.setAttribute( 'position', new THREE.BufferAttribute( @verts, 2 ) )
+		# @geom.setAttribute( 'uv', new THREE.BufferAttribute( @uvs, 2 ) )
 
 		# @geom.setIndex(indexes)
 		@mesh = new THREE.Mesh @geom,@mat
-		@mesh.drawMode = THREE.TriangleStripDrawMode
-
-
-	createLineGeom: ->
-		@verts = new Float32Array(@length*3).fill(0)
-		@uvs = new Float32Array(@length*2).fill(0)
-		@norms = new Float32Array(@length*3).fill(0)
-		# indexes = []
-		for i in [0...@length]
-			# a = @size/@length*i
-			if i % 2 == 0
-				r = -@width/2
-				@uvs[i*2+1] = 1
-				
-			else 
-				r = @width/2
-				@uvs[i*2+1] = 0
-
-			@uvs[i*2+0] = 1/@length*i
-			y = @height / @length * i
-			x = r
-
-			@verts[i*3+0] = x
-			@verts[i*3+1] = y
-			
-			# indexes.push(x,y,0)
-			
-
-		@geom = new THREE.BufferGeometry()
-		@geom.addAttribute( 'position', new THREE.BufferAttribute( @verts, 3 ) )
-		@geom.addAttribute( 'uv', new THREE.BufferAttribute( @uvs, 2 ) )
-
-		# @geom.setIndex(indexes)
-		@mesh = new THREE.Mesh @geom,@mat
-		@mesh.drawMode = THREE.TriangleStripDrawMode
-
-
-
+		# @mesh.drawMode = THREE.TriangleStripDrawMode
 
 
 
@@ -170,13 +148,16 @@ class Wave
 		
 		for i in [0...@length]
 			# current angle relative to center of wave
-			a = @size / @length * i
-			
-			
-			beta = i / @length
+			# a = @size / @length * i
 
 
-			buffer_i = Math.floor(bufferLength*beta)
+
+			
+			
+			beta1 = i / @length
+			beta2 = (i+1) / @length
+			buffer_i = Math.floor(bufferLength*beta1)
+			buffer_i2 = Math.floor(bufferLength*beta2)
 			
 			vol = 0
 
@@ -186,10 +167,12 @@ class Wave
 			#sync wave with sound if buffer is passed into tick 
 			if waveBuffer 
 				@waveBuffer[buffer_i] = waveBuffer[buffer_i]
+				@waveBuffer[buffer_i2] = waveBuffer[buffer_i2]
 			
 			# fade out
 			else
 				@waveBuffer[buffer_i] += (0.0 - @waveBuffer[buffer_i])*.1
+				@waveBuffer[buffer_i2] += (0.0 - @waveBuffer[buffer_i2])*.1
 			
 
 			if @waveBuffer[buffer_i] > @max_wave
@@ -218,32 +201,47 @@ class Wave
 
 
 		
-			r_offset = @waveBuffer[buffer_i]*20*@fadeInOut(beta)
+			r_offset = @waveBuffer[buffer_i]*20*@fadeInOut(beta1)
+			r_offset2 = @waveBuffer[buffer_i2]*20*@fadeInOut(beta2)
 			
-			# r = (@radius+r_offset)
 			
-			if i % 2 == 0
-				r = @radius + @width/2
-			else
-				r = @radius - @width/2
+			outer_r = (@radius+r_offset)
+			outer_r2 = (@radius+r_offset2)
+
 			
-			r += r_offset
 
 			# r -= 5/@length*i
 
 			
 			
 
-			px = Math.cos(a) * r
-			py = Math.sin(a) * r
-			fact = 0.2
+			# px = Math.cos(a) * r
+			# py = Math.sin(a) * r
+			# fact = 0.2
 
 			# if freq > 1
 			# 	fact *= 2.0
+			start_angle = (Math.PI)/@length*(i-1)
+			end_angle = (Math.PI)/@length*i
+			
 
-			@verts[(i+1)*3+0] += (px - @verts[(i+1)*3+0]) * fact
-			@verts[(i+1)*3+1] += (py - @verts[(i+1)*3+1]) * fact
+			# log outer_r
+			# if i%2 == 0
+			@verts[i*12+2] = Math.cos(start_angle)*outer_r
+			@verts[i*12+3] = Math.sin(start_angle)*outer_r
+			@verts[i*12+4] = @verts[i*12+8] = Math.cos(end_angle)*outer_r2
+			@verts[i*12+5] = @verts[i*12+9] = Math.sin(end_angle)*outer_r2
 
+		# else
+			# 	@verts[i*12+2] = Math.cos(start_angle)*outer_r
+			# 	@verts[i*12+3] = Math.sin(start_angle)*outer_r
+			# 	@verts[i*12+4] = @verts[i*12+8] = Math.cos(end_angle)*outer_r2
+			# 	@verts[i*12+5] = @verts[i*12+9] = Math.sin(end_angle)*outer_r2
+
+			
+
+
+			
 		@wave_diff = Math.clamp(@max_wave - @min_wave,0,2)
 		
 		@angle_offset += ((@pitch/@length) - @angle_offset)*.1#*@pitch/10
@@ -279,7 +277,7 @@ class AppView extends Component
 
 		@circ = new THREE.Mesh(new THREE.CircleBufferGeometry(40,40),new THREE.MeshBasicMaterial(color:'#000'))
 		@circ.position.z = 10
-		@scene.add @circ
+		# @scene.add @circ
 
 		window.scene = @
 
@@ -538,13 +536,10 @@ class AppView extends Component
 
 	tick: (t)=>
 		
-		
-		
 		@highNode.getFloatTimeDomainData(@highBuffer)
 		@midNode.getFloatTimeDomainData(@midBuffer)
 		@lowNode.getFloatTimeDomainData(@lowBuffer)
 		
-
 		
 		requestAnimationFrame @tick
 		@mapWaves()
